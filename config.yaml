@@ -1,0 +1,84 @@
+# LLM Provider
+openrouter:
+  api_key_env: "OPENROUTER_API_KEY"
+  base_url: "https://openrouter.ai/api/v1"
+
+# Model mapping (friendly name -> OpenRouter slug)
+models:
+  qwen-72b: "qwen/qwen-2.5-72b-instruct"
+  llama-70b: "meta-llama/llama-3.1-70b-instruct"
+  deepseek-r1-32b: "deepseek/deepseek-r1-distill-qwen-32b"
+  qwen-14b: "qwen/qwen3-14b"
+
+# Agent -> model assignment
+agents:
+  ideator:
+    model: qwen-72b
+    temperature: 0.8
+  recombiner:
+    model: qwen-72b
+    temperature: 0.65
+  gatekeeper:
+    model: llama-70b
+    temperature: 0.25
+  principles_judge:
+    model: llama-70b
+    temperature: 0.2
+  pre_ranker:
+    model: llama-70b
+    temperature: 0.2
+  dsr_designer:
+    model: deepseek-r1-32b
+    temperature: 0.25
+  ranker:
+    model: llama-70b
+    temperature: 0.15
+  schema_repair:
+    model: qwen-14b
+    temperature: 0.0
+  angel_rescue:
+    model: qwen-72b
+    temperature: 0.7
+
+# Embedding (for diversity selection)
+embedding:
+  provider: openrouter
+  model: "openai/text-embedding-3-small"
+  fallback: tfidf
+
+# Gatekeeper thresholds (strict)
+gatekeeper:
+  q1_kill_threshold: 6
+  q2_kill_threshold: 3
+  q3_kill_threshold: 3
+
+# Pipeline defaults
+pipeline:
+  domain: productivity
+  n_raw: 30
+  top_k: 10
+  min_hybrids: 5
+  max_retries: 1
+  seed: 42
+
+# User profile (optional -- pipeline works without it)
+user_profile:
+  skills: ["Python", "LangGraph", "FastAPI", "medical background"]
+  stack: ["Python", "LangGraph", "OpenRouter", "Pydantic"]
+  past_projects: ["AI diagnosis assistant", "clinical note summarizer"]
+
+# Market search for pre-ranker monetization scoring
+search:
+  enabled: true
+  provider: duckduckgo
+  max_results: 3
+  timeout_seconds: 10
+
+# Memory (cross-run duplicate detection)
+memory:
+  similarity_threshold: 0.85
+  history_dir: "./outputs/global_history"
+
+# Output
+output:
+  dir: "./outputs"

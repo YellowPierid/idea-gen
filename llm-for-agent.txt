@@ -1,0 +1,35 @@
+Agent A — Ideator (Divergent Idea Generation)
+
+LLM: Qwen2.5-72B-Instruct
+Why: Best at creative breadth, novel recombination, and long-context ideation without collapsing into generic “LLM wrapper” ideas.
+Temperature: 0.7–0.9
+
+Agent B — Recombiner (Hybridization / Anti-Commodity Creativity)
+
+LLM: Qwen2.5-72B-Instruct
+Why: Strong at synthesizing multiple ideas into sharper hybrids with compounding advantages (memory, workflow lock-in).
+Temperature: 0.6–0.7
+
+Agent C — Anti-Wrapper Gatekeeper (Hard Veto Judge)
+
+LLM: Llama-3.1-70B-Instruct
+Why: Conservative, skeptical evaluator; excellent at spotting thin wrappers and weak moats.
+Temperature: 0.2–0.3
+
+Agent D — AI-Native Design Principles Judge
+
+LLM: Llama-3.1-70B-Instruct
+Why: Strong rubric-based reasoning; good at scoring design principles and proposing concrete improvements.
+Temperature: 0.2
+
+Agent E — Design Science Research (DSR) Experiment Designer
+
+LLM: DeepSeek-R1-Distill-Qwen-32B
+Why: Reasoning-oriented model; excellent for falsification logic, WOZ experiment design, and kill-criteria formulation.
+Temperature: 0.2–0.3
+
+Schema Repair / Retry / Cheap Iteration (Utility Agent)
+
+LLM: Qwen2.5-14B-Instruct
+Why: Cost-efficient, reliable instruction following; ideal for JSON/schema retries and development runs.
+Temperature: 0

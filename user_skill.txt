@@ -1,0 +1,154 @@
+# USER SKILL PROFILE
+# Purpose:
+# - Ground idea feasibility scoring in real, declared user capability
+# - Prevent ranking ideas that exceed stack, time, or domain constraints
+# - Used by Pre-Ranker (Node D.5) for explicit feasibility checks
+
+[identity]
+role = "solo technical builder / researcher"
+background = ["medical (radiology)", "applied AI", "education tools", "quant trading research"]
+work_style = ["project-driven", "iterative MVP", "agent-based systems"]
+
+[core_programming_skills]
+languages = ["Python (intermediate)"]
+strengths = [
+  "reading and modifying existing code",
+  "AI-assisted development",
+  "notebook-based experimentation",
+  "turning research workflows into prototypes"
+]
+limitations = [
+  "not a low-level systems programmer",
+  "not a frontend-heavy JS/React developer",
+  "avoids complex distributed systems"
+]
+
+[ai_and_agent_stack]
+llm_usage = [
+  "prompt engineering",
+  "structured output",
+  "tool calling",
+  "reasoning + critique loops"
+]
+
+agent_frameworks = {
+  primary = ["LangGraph"],
+  secondary = ["LangChain (minimal, only to support LangGraph)"],
+  visual_orchestration = ["Flowise (with MCP integration)"]
+}
+
+rag_and_knowledge = [
+  "basic RAG pipelines",
+  "vector databases (lightweight)",
+  "document + OCR ingestion",
+  "academic / structured knowledge sources"
+]
+
+ocr = [
+  "EasyOCR",
+  "image-to-text pipelines for Thai and English"
+]
+
+models_and_providers = [
+  "OpenRouter (open-source LLMs)",
+  "local LLMs via Ollama / LM Studio"
+]
+
+[mcp_and_tooling]
+mcp_experience = [
+  "using MCP servers",
+  "tool-based agent decomposition",
+  "multi-agent workflows with orchestrator + specialists"
+]
+
+automation_tools = [
+  "Flowise",
+  "basic n8n usage (non-agentic)"
+]
+
+[infrastructure]
+deployment_level = "local / single-machine"
+tools = [
+  "Docker",
+  "docker-compose (basic)",
+  "local services",
+  "manual restart & logging"
+]
+explicitly_not_used = [
+  "Kubernetes",
+  "complex cloud infra",
+  "multi-region deployment"
+]
+
+[application_layer]
+frontend = [
+  "Streamlit (primary)",
+  "basic FastAPI endpoints"
+]
+
+acceptable_scope = [
+  "internal tools",
+  "research MVPs",
+  "solo-founder SaaS prototypes"
+]
+
+avoids = [
+  "pixel-perfect UI work",
+  "complex real-time frontends"
+]
+
+[domain_expertise]
+strong_domains = [
+  "radiology / medical imaging workflows",
+  "education (biology, olympiad-style learning)",
+  "AI-assisted learning tools",
+  "investment / trading research (long-term, ETF-focused)"
+]
+
+moderate_domains = [
+  "productivity tools",
+  "knowledge work augmentation"
+]
+
+weak_or_unlisted_domains = [
+  "legal compliance-heavy products",
+  "fintech requiring regulation",
+  "consumer social networks",
+  "gaming engines"
+]
+
+[past_projects_examples]
+projects = [
+  "AI-assisted radiology report QA and editing",
+  "Biology Olympiad solver (OCR → reasoning → explanation)",
+  "Campus navigation Android app (MIT App Inventor, CSV-driven)",
+  "ETF timing and trading research pipelines",
+  "Multi-agent AI idea generation and evaluation systems"
+]
+
+[time_and_build_constraints]
+preferred_mvp_timeline = "2–4 weeks"
+max_complexity = "single-developer, AI-assisted"
+acceptable_tech_debt = true
+
+[explicit_feasibility_rules]
+green_flags = [
+  "Python + LangGraph compatible",
+  "Streamlit-deployable",
+  "Agentic or AI-native core value",
+  "Leverages existing domain expertise"
+]
+
+yellow_flags = [
+  "Requires unfamiliar domain but shallow depth",
+  "Needs light frontend work beyond Streamlit",
+  "Depends on APIs but not regulation-heavy"
+]
+
+red_flags = [
+  "Requires advanced React/JS frontend",
+  "Heavy DevOps or cloud orchestration",
+  "Hard real-time constraints",
+  "Deep domain expertise not listed above",
+  "Non-AI-differentiated CRUD apps"
+]
