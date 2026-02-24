@@ -5,40 +5,39 @@ openrouter:
 
 # Model mapping (friendly name -> OpenRouter slug)
 models:
-  qwen-72b: "qwen/qwen-2.5-72b-instruct"
-  llama-70b: "meta-llama/llama-3.1-70b-instruct"
-  deepseek-r1-32b: "deepseek/deepseek-r1-distill-qwen-32b"
-  qwen-14b: "qwen/qwen3-14b"
+  grok-4.1-fast: "x-ai/grok-4.1-fast"
+  deepseek-v3.2: "deepseek/deepseek-v3.2"
+  glm-4.7-flash: "z-ai/glm-4.7-flash"
 
 # Agent -> model assignment
 agents:
   ideator:
-    model: qwen-72b
-    temperature: 0.8
+    model: grok-4.1-fast
+    temperature: 0.85
   recombiner:
-    model: qwen-72b
-    temperature: 0.65
+    model: deepseek-v3.2
+    temperature: 0.60
   gatekeeper:
-    model: llama-70b
-    temperature: 0.25
+    model: deepseek-v3.2
+    temperature: 0.20
   principles_judge:
-    model: llama-70b
-    temperature: 0.2
+    model: deepseek-v3.2
+    temperature: 0.18
   pre_ranker:
-    model: llama-70b
-    temperature: 0.2
+    model: deepseek-v3.2
+    temperature: 0.20
   dsr_designer:
-    model: deepseek-r1-32b
+    model: deepseek-v3.2
     temperature: 0.25
   ranker:
-    model: llama-70b
+    model: deepseek-v3.2
     temperature: 0.15
   schema_repair:
-    model: qwen-14b
+    model: glm-4.7-flash
     temperature: 0.0
   angel_rescue:
-    model: qwen-72b
-    temperature: 0.7
+    model: grok-4.1-fast
+    temperature: 0.70
 
 # Embedding (for diversity selection)
 embedding:
@@ -54,7 +53,8 @@ gatekeeper:
 
 # Pipeline defaults
 pipeline:
-  domain: productivity
+  domain: "productivity_android"
+  android_profile: "mid-range Android, 4GB RAM, sometimes offline, limited background permissions"
   n_raw: 30
   top_k: 10
   min_hybrids: 5
@@ -63,9 +63,9 @@ pipeline:
 
 # User profile (optional -- pipeline works without it)
 user_profile:
-  skills: ["Python", "LangGraph", "FastAPI", "medical background"]
-  stack: ["Python", "LangGraph", "OpenRouter", "Pydantic"]
-  past_projects: ["AI diagnosis assistant", "clinical note summarizer"]
+  skills: ["Android development", "Kotlin", "Python", "LangGraph", "mobile UX"]
+  stack: ["Python", "LangGraph", "OpenRouter", "Pydantic", "Kotlin", "Android SDK"]
+  past_projects: ["Android apps", "mobile productivity tools", "LLM agent pipelines"]
 
 # Market search for pre-ranker monetization scoring
 search:
@@ -76,7 +76,7 @@ search:
 
 # Memory (cross-run duplicate detection)
 memory:
-  similarity_threshold: 0.85
+  similarity_threshold: 0.90
   history_dir: "./outputs/global_history"
 
 # Output
