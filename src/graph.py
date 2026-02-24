@@ -60,6 +60,7 @@ def _write_intermediate(store: OutputStore, node_name: str, state: PipelineState
         _write_dsr_markdown(store, state)
     elif node_name == "ranker" and state.get("final_ranking"):
         _write_final_outputs(store, state)
+        _write_android_brief(store, state)
 
 
 def _write_dsr_markdown(store: OutputStore, state: PipelineState):
@@ -156,6 +157,53 @@ def _default_7_day_plan(idea_name: str) -> str:
     )
 
 
+def _write_android_brief(store: OutputStore, state: PipelineState):
+    """Write android_brief.md for the top-ranked idea."""
+    rankings = state.get("final_ranking", [])
+    survivors = {idea.id: idea for idea in state.get("survivors", [])}
+    if not rankings:
+        return
+
+    top = rankings[0]
+    idea = survivors.get(top.idea_id)
+    if not idea:
+        return
+
+    android_profile = state.get("android_profile", "unspecified")
+    lines = [
+        f"# Android Brief: {idea.name}",
+        "",
+        f"**Target profile:** {android_profile}",
+        f"**Final score:** {top.total_score:.2f}",
+        "",
+        "## Core Loops (Must Be Fast on Device)",
+        idea.hook_loop,
+        "",
+        "## AI Magic Moment",
+        idea.ai_magic_moment,
+        "",
+        "## MVP Scope",
+        idea.mvp_scope,
+        "",
+        "## Where to Run Heavy AI",
+        "- **On-device:** Caching, local query matching, offline retrieval",
+        "- **Server-side:** LLM inference, embedding generation, batch sync",
+        "",
+        "## Offline / Low-Battery Handling Strategy",
+        "- All writes go to local SQLite first; sync is a deferred background job",
+        "- AI enrichment runs on WiFi/charging only (WorkManager with network + charging constraints)",
+        "- Core capture and retrieval must work fully offline",
+        "",
+        "## Android Performance Checklist",
+        "- [ ] No continuous background service (use WorkManager for deferred AI tasks)",
+        "- [ ] Cold start under 2 seconds on mid-range device",
+        "- [ ] Core feature usable in under 60 second session",
+        "- [ ] Graceful offline fallback with local-only data",
+    ]
+    store.write_markdown("android_brief.md", "\n".join(lines))
+    logger.info("[INFO] android_brief.md written for top idea: %s", idea.name)
+
+
 def _update_past_themes(state: PipelineState, run_logger: RunLogger) -> PipelineState:
     """Post-pipeline maintenance: summarize global history into past themes.
 
@@ -169,12 +217,11 @@ def _update_past_themes(state: PipelineState, run_logger: RunLogger) -> Pipeline
 
     if len(records) < 10:
         run_logger.info(
-            "Themes update: only %d ideas in history, skipping summary",
-            len(records),
+            f"Themes update: only {len(records)} ideas in history, skipping summary"
         )
         return state
 
-    run_logger.info("Themes update: summarizing %d past ideas", len(records))
+    run_logger.info(f"Themes update: summarizing {len(records)} past ideas")
 
     # Build a compact list of idea names for the LLM
     idea_names = [r.get("name", "unnamed") for r in records]
@@ -210,7 +257,7 @@ def _update_past_themes(state: PipelineState, run_logger: RunLogger) -> Pipeline
             PAST_THEMES_PATH.write_text(summary, encoding="utf-8")
             run_logger.info("Themes update: wrote past_themes.md")
     except Exception as e:
-        run_logger.warning("Themes update failed (non-fatal): %s", e)
+        run_logger.warn(f"Themes update failed (non-fatal): {e}")
 
     return state
 
