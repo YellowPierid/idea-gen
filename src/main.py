@@ -47,7 +47,8 @@ def cli():
 @click.option("--resume", type=str, default=None, help="Resume a previous run by run_id")
 @click.option("--no-pause", is_flag=True, default=False, help="Skip interactive review pause")
 @click.option("--config-path", type=str, default="config.yaml", help="Path to config file")
-def run(n_raw, top_k, seed, domain, resume, no_pause, config_path):
+@click.option("--android-profile", type=str, default=None, help='Android device profile, e.g. "budget, 2GB RAM, always offline"')
+def run(n_raw, top_k, seed, domain, resume, no_pause, config_path, android_profile):
     """Run the full idea generation pipeline."""
     _setup_logging()
     logger = logging.getLogger("idea_gen")
@@ -67,6 +68,8 @@ def run(n_raw, top_k, seed, domain, resume, no_pause, config_path):
         config.pipeline.seed = seed
     if domain is not None:
         config.pipeline.domain = domain
+    if android_profile is not None:
+        config.pipeline.android_profile = android_profile
 
     # Seed local randomness
     random.seed(config.pipeline.seed)
@@ -84,6 +87,7 @@ def run(n_raw, top_k, seed, domain, resume, no_pause, config_path):
     # Check for resume
     initial_state: PipelineState = {
         "config": config,
+        "android_profile": config.pipeline.android_profile,
         "raw_ideas": [],
         "selected_ideas": [],
         "hybrids": [],
@@ -209,7 +213,7 @@ def config_check(config_path):
         # Use the cheapest model for a simple test
         response = call_llm(
             client=client,
-            model=config.models.get("qwen-14b", "qwen/qwen-2.5-14b-instruct"),
+            model=config.models.get("glm-4.7-flash", "z-ai/glm-4.7-flash"),
             temperature=0.0,
             system_prompt="You are a test assistant.",
             user_prompt="Reply with exactly: OK",

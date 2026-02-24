@@ -277,6 +277,7 @@ class PipelineParams(BaseModel):
     model_config = ConfigDict(strict=False)
 
     domain: str
+    android_profile: str = ""
     n_raw: int
     top_k: int
     min_hybrids: int
@@ -342,6 +343,7 @@ class CheckpointData(BaseModel):
 
 class PipelineState(TypedDict):
     config: PipelineConfig
+    android_profile: str
     raw_ideas: List[IdeaCandidate]
     selected_ideas: List[IdeaCandidate]
     hybrids: List[IdeaCandidate]

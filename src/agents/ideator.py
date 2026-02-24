@@ -13,22 +13,23 @@ from src.storage import load_global_history, save_global_history
 
 logger = logging.getLogger("idea_gen")
 
-# Default user segments for productivity domain (3 calls)
+# Default user segments for Android productivity domain (3 calls)
 DEFAULT_SEGMENTS = [
-    "Solopreneurs / Freelancers",
-    "Corporate Knowledge Workers / Managers",
-    "Students / Researchers",
+    "Indie developers / side-project builders on mobile",
+    "Students and self-learners",
+    "Field workers / blue-collar professionals",
 ]
 
 # Retry segments (used if all ideas killed by gatekeeper)
 RETRY_SEGMENTS = [
-    "Creators / Content Producers",
-    "Team Leads / Coordinators",
-    "Consultants / Advisors",
+    "Freelancers managing client work on the go",
+    "Hobbyists and makers tracking personal projects",
+    "Remote workers needing offline-first productivity tools",
 ]
 
 DOMAIN_DESCRIPTIONS = {
     "productivity": "planning, writing, decision-making, meeting workflows, project execution, personal organization, learning-for-work",
+    "productivity_android": "offline-first Android apps for on-the-go capture, short-session productivity, and AI-enriched workflows that sync when connected",
     "health": "wellness tracking, health management, fitness planning, mental health support",
     "education": "learning platforms, skill development, tutoring, educational content",
     "finance": "personal finance, budgeting, investment, financial planning",
@@ -204,6 +205,9 @@ def run_ideator(state: PipelineState, run_logger: RunLogger) -> PipelineState:
     # Tier 2 (soft memory): inject past themes into system prompt
     past_themes = _load_past_themes()
 
+    # Android profile context (appended to system prompt after format)
+    android_profile = state.get("android_profile", "")
+
     # Load global history for Tier 1 (hard memory)
     history_dir = config.memory.history_dir
     threshold = config.memory.similarity_threshold
@@ -223,6 +227,12 @@ def run_ideator(state: PipelineState, run_logger: RunLogger) -> PipelineState:
             user_context=user_context,
             past_themes=past_themes,
         )
+        if android_profile:
+            system_prompt += (
+                f"\n\n## Target Android Profile\n"
+                f"Device profile for this run: {android_profile}\n"
+                f"Generate ideas that work within these hardware and connectivity constraints."
+            )
 
         ideas = _generate_batch(
             client, model_slug, temperature, system_prompt, user_template,
@@ -270,6 +280,12 @@ def run_ideator(state: PipelineState, run_logger: RunLogger) -> PipelineState:
             user_context=user_context,
             past_themes=past_themes,
         )
+        if android_profile:
+            system_prompt += (
+                f"\n\n## Target Android Profile\n"
+                f"Device profile for this run: {android_profile}\n"
+                f"Generate ideas that work within these hardware and connectivity constraints."
+            )
 
         ideas = _generate_batch(
             client, model_slug, temperature, system_prompt, user_template,
