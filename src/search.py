@@ -29,7 +29,7 @@ def search_market_evidence(
     query = f"{idea_name} {user_segment} app competitor"
 
     try:
-        from duckduckgo_search import DDGS
+        from ddgs import DDGS
 
         with DDGS() as ddgs:
             results = list(
@@ -55,8 +55,8 @@ def search_market_evidence(
 
     except ImportError:
         logger.warning(
-            "duckduckgo-search not installed. "
-            "Install with: pip install duckduckgo-search>=6.0.0"
+            "ddgs not installed. "
+            "Install with: pip install ddgs>=6.0.0"
         )
         return None
     except Exception as e:

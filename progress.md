@@ -1,8 +1,8 @@
 # Progress Tracker
 
-## Current State: v3.1 (Two-Tier Memory) CODE COMPLETE, NEEDS TESTING
+## Current State: v3.1 (Two-Tier Memory) TESTED AND WORKING
 
-All v3.0 enhancements + Two-Tier Memory System are coded. All imports verified at runtime (AST parse + runtime import checks). Existing tests not yet re-run. Next session: run tests, then do a full pipeline run.
+All v3.0 enhancements + Two-Tier Memory System are coded, tested, and verified via two full pipeline runs. SPEC.md updated to v3.1.
 
 ---
 
@@ -15,7 +15,7 @@ All v3.0 enhancements + Two-Tier Memory System are coded. All imports verified a
 | config.py | YAML loader, model name resolution, agent config lookup, user_profile + search parsing | Done |
 | logging_utils.py | RunLogger: console progress + JSON file log | Done |
 | storage.py | OutputStore: JSONL/Markdown writing, checkpoint save/load, global history persistence (JSONL + numpy) | Done |
-| llm.py | OpenRouter client, structured JSON parsing, schema repair fallback (qwen-14b) | Done |
+| llm.py | OpenRouter client, structured JSON parsing, schema repair fallback (glm-4.7-flash) | Done |
 | embeddings.py | OpenRouter embeddings + TF-IDF fallback | Done |
 | scoring.py | Gatekeeper thresholds, score normalization, final aggregation | Done |
 | prompt_utils.py | format_user_context() shared utility for ideator + pre_ranker | Done (v3.0) |
@@ -26,15 +26,15 @@ All v3.0 enhancements + Two-Tier Memory System are coded. All imports verified a
 ### Agent Nodes (src/agents/)
 | File | Node | Model | Purpose |
 |------|------|-------|---------|
-| ideator.py | A | qwen-72b | 3x10 divergent generation by user segment + user_context + memory (Tier 1 hard filter + Tier 2 soft prompt) + backfill |
+| ideator.py | A | grok-4.1-fast | 3x10 divergent generation by user segment + user_context + memory (Tier 1 hard filter + Tier 2 soft prompt) + backfill |
 | selector.py | A.5 | (embedding) | K-means clustering for diversity selection |
 | user_review.py | A.5b | (CLI) | Interactive veto/star review (--no-pause to skip) |
-| recombiner.py | B | qwen-72b | Hybrid generation (min 5) with retry |
-| gatekeeper.py | C | llama-70b + qwen-72b | Anti-wrapper veto + Angel's Rescue + starred bypass |
-| principles_judge.py | D | llama-70b | 5-principle scoring (0-2 each) |
-| pre_ranker.py | D.5 | llama-70b | Feasibility/habit/monetization + market search + user_context |
-| dsr_designer.py | E | deepseek-r1-32b | DSR validation protocols |
-| ranker.py | F | llama-70b | Final aggregation + 7-day plan |
+| recombiner.py | B | deepseek-v3.2 | Hybrid generation (min 5) with retry |
+| gatekeeper.py | C | gpt-oss-120b + grok-4.1-fast | Anti-wrapper veto + Angel's Rescue + starred bypass |
+| principles_judge.py | D | gpt-oss-120b | 5-principle scoring (0-2 each) |
+| pre_ranker.py | D.5 | gpt-oss-120b | Feasibility/habit/monetization + market search + user_context |
+| dsr_designer.py | E | deepseek-v3.2 | DSR validation protocols |
+| ranker.py | F | gpt-oss-120b | Final aggregation + 7-day plan |
 
 ### Prompt Templates (src/prompts/)
 16 files: system + user for each of the 8 LLM-calling agents (7 original + angel_rescue).
@@ -44,7 +44,7 @@ All v3.0 enhancements + Two-Tier Memory System are coded. All imports verified a
 - test_schema_validation.py -- schema parsing + LLM integration tests
 - test_gatekeeper_logic.py -- threshold logic + edge cases (10 tests)
 - test_ranker_stability.py -- score aggregation math (7 tests)
-- **23 non-LLM tests passed previously.** Need to re-run after v3.0 changes.
+- **25 passed, 2 skipped** (re-verified 2026-02-04 after v3.1 changes).
 
 ---
 
@@ -57,12 +57,12 @@ All v3.0 enhancements + Two-Tier Memory System are coded. All imports verified a
 5. **RankerLLMResponse intermediate schema** in ranker.py -- LLM provides rationales + 7-day plan text; final scores computed programmatically
 6. **Extra state keys** `_seven_day_plan` and `_ranker_notes` -- stored in state dict for output generation (not in TypedDict definition)
 7. **Sequential LLM calls** -- no parallelism, per spec constraint
-8. **Schema repair** routes to qwen-14b immediately on failure (no primary retry)
+8. **Schema repair** routes to glm-4.7-flash immediately on failure (no primary retry)
 9. **Checkpoint after every node** via _wrap_node in graph.py
 10. **Conditional retry** after gatekeeper: if all killed and retry_count < max_retries, loops back to ideator with different user segments
 11. **API key via .env file** -- added python-dotenv; config.py calls load_dotenv() before reading env vars
-12. **Schema repair model updated** -- qwen/qwen-2.5-14b-instruct no longer on OpenRouter; replaced with qwen/qwen3-14b
-13. **Angel's Rescue** (v3.0): qwen-72b at temp 0.7. Max 1 attempt per idea, no recursion. Rescued ideas are re-scored through gatekeeper; if still KILL, kill is confirmed.
+12. **Schema repair model updated** -- switched to glm-4.7-flash (z-ai/glm-4.7-flash) for cost-efficient JSON repair
+13. **Angel's Rescue** (v3.0): grok-4.1-fast at temp 0.7. Max 1 attempt per idea, no recursion. Rescued ideas are re-scored through gatekeeper; if still KILL, kill is confirmed.
 14. **Starred ideas** (v3.0): Bypass gatekeeper kill entirely. Scored for data but immune to KILL. Angel's Rescue skipped for starred ideas.
 15. **User profile** (v3.0): Fully optional. format_user_context() returns empty string if no profile. Injected into ideator system prompt and pre_ranker user prompt.
 16. **Market search** (v3.0): DuckDuckGo (free, no API key). Graceful fallback -- returns None on failure, pre_ranker falls back to LLM-only scoring.
@@ -75,6 +75,10 @@ All v3.0 enhancements + Two-Tier Memory System are coded. All imports verified a
 23. **Backfill logic**: When Tier 1 filter removes ideas below target count, up to 2 backfill rounds cycle through segments to generate replacement ideas. Each backfill batch also passes through the novelty filter.
 24. **update_themes node**: Runs after ranker, before END. Non-fatal -- wrapped in try/except so a failed LLM call does not crash the pipeline. Only fires when 10+ ideas exist in global history.
 25. **Pipeline flow changed**: `ranker -> update_themes -> END` (was `ranker -> END`).
+26. **RunLogger bug fix** (2026-02-04): `_update_past_themes` in graph.py used printf-style `run_logger.info("...%d", val)` but RunLogger only accepts a single string. Converted to f-strings. Also fixed `run_logger.warning()` call -- method is `warn()`, not `warning()`.
+27. **scikit-learn not pre-installed**: Despite being declared in pyproject.toml, `sklearn` was missing at runtime. Installed manually (`pip install scikit-learn`). Root cause: environment was not installed via `pip install -e .`.
+28. **SPEC.md updated to v3.1**: Added MemoryConfig schema (7.9), Node G (Update Themes), memory config block, global_history in repo structure, 6 decision log entries (#38-43).
+29. **LLM model swap** (2026-02-04): Replaced all models to improve idea generation quality. Old -> New: qwen-72b -> grok-4.1-fast (creative agents), qwen-72b -> deepseek-v3.2 (recombiner), llama-70b -> gpt-oss-120b (all judges/rankers), deepseek-r1-32b -> deepseek-v3.2 (DSR designer), qwen-14b -> glm-4.7-flash (schema repair). Config-only change -- no Python code modified. Rationale: previous models produced weak/generic ideas; new models selected for stronger creative divergence (Grok 4.1 Fast) and better reasoning (DeepSeek V3.2, GPT-OSS 120B).
 
 ---
 
@@ -91,7 +95,7 @@ All v3.0 enhancements + Two-Tier Memory System are coded. All imports verified a
 
 ## v3.0 Enhancements -- COMPLETE
 
-### Status: ALL CODE IMPLEMENTED, NEEDS TESTING
+### Status: TESTED AND WORKING
 
 All 6 v3.0 enhancements are coded and import-verified:
 
@@ -116,7 +120,7 @@ All 6 v3.0 enhancements are coded and import-verified:
 
 ## v3.1 Two-Tier Memory System -- COMPLETE
 
-### Status: ALL CODE IMPLEMENTED, NEEDS TESTING
+### Status: TESTED AND WORKING
 
 | Component | Files Changed | Status |
 |-----------|---------------|--------|
@@ -155,14 +159,86 @@ Prompt injection:
 src/prompts/context/past_themes.md -> {past_themes} in ideator_system.md
 ```
 
+### Testing Results (2026-02-04)
+
+1. **Unit tests:** 25 passed, 2 skipped (`python -m pytest tests/ -x -q`)
+2. **Config check:** All model mappings valid, API connection OK, 16 prompt templates found
+3. **Pipeline run 1** (`20260204_141137`): All nodes completed. 9 ideas generated, 5 survived gatekeeper (5 rescued by angel). Failed at `update_themes` due to `RunLogger.info()` printf-style formatting bug.
+4. **Bug fix:** `graph.py` lines 171-177, 212 -- converted `RunLogger.info("... %d", val)` to f-strings. Also fixed `run_logger.warning()` (method is `warn`, not `warning`).
+5. **Pipeline run 2** (`20260204_142313`): Full success (exit code 0). 9 ideas generated, Tier 1 memory filtered 1 duplicate (`ThesisMaster`, similarity 0.856), backfill generated 1 replacement. 4 survivors ranked. `update_themes` wrote `past_themes.md` (18 ideas summarized). Top idea: ProjectLitMap (score 3.100).
+
 ### Next Steps
 
-1. Run existing tests: `python -m pytest tests/ -x -q`
-2. Run config-check: `python -m src.main config-check`
-3. Do a full pipeline run: `python -m src.main run --no-pause --n_raw 9 --top_k 3 --seed 42`
-4. Review outputs in `outputs/runs/` and `outputs/global_history/`
-5. Run a second pipeline run to verify memory system filters duplicates
-6. Write FOR_YELLOW.md if pipeline runs successfully
+1. Write FOR_YELLOW.md
+2. Run pipeline with new LLMs to verify all models work via OpenRouter
+3. Implement v3.2 (LangSmith Tracing & Evaluation)
+
+---
+
+## LLM Model Swap -- COMPLETE (config-only)
+
+### Status: CONFIG UPDATED, AWAITING FIRST RUN
+
+### Motivation
+Previous models (Qwen 2.5 72B, Llama 3.1 70B, DeepSeek R1 32B) produced weak/generic ideas. Switched to models with stronger creative and reasoning capabilities.
+
+### Model Mapping (Old -> New)
+
+| Friendly Name | Old OpenRouter Slug | New OpenRouter Slug |
+|---------------|---------------------|---------------------|
+| grok-4.1-fast | qwen/qwen-2.5-72b-instruct | x-ai/grok-4.1-fast |
+| deepseek-v3.2 | qwen/qwen-2.5-72b-instruct (recombiner) / deepseek/deepseek-r1-distill-qwen-32b (DSR) | deepseek/deepseek-v3.2 |
+| gpt-oss-120b | meta-llama/llama-3.1-70b-instruct | openai/gpt-oss-120b |
+| glm-4.7-flash | qwen/qwen3-14b | z-ai/glm-4.7-flash |
+
+### Agent Assignments
+
+| Agent | Old Model | New Model | Old Temp | New Temp |
+|-------|-----------|-----------|----------|----------|
+| ideator | qwen-72b | grok-4.1-fast | 0.80 | 0.85 |
+| recombiner | qwen-72b | deepseek-v3.2 | 0.65 | 0.60 |
+| gatekeeper | llama-70b | gpt-oss-120b | 0.25 | 0.20 |
+| principles_judge | llama-70b | gpt-oss-120b | 0.20 | 0.18 |
+| pre_ranker | llama-70b | gpt-oss-120b | 0.20 | 0.20 |
+| dsr_designer | deepseek-r1-32b | deepseek-v3.2 | 0.25 | 0.25 |
+| ranker | llama-70b | gpt-oss-120b | 0.15 | 0.15 |
+| schema_repair | qwen-14b | glm-4.7-flash | 0.00 | 0.00 |
+| angel_rescue | qwen-72b | grok-4.1-fast | 0.70 | 0.70 |
+
+### Files Changed
+- `config.yaml` -- model mappings and agent assignments (only file changed)
+
+### What Did NOT Change
+- No Python code changes. Architecture is fully config-driven.
+- `.env` -- same OPENROUTER_API_KEY, same base URL
+- Embedding model unchanged (openai/text-embedding-3-small)
+
+---
+
+## Prompt Quality Improvements -- COMPLETE
+
+### Status: IMPLEMENTED AND VERIFIED
+
+### Problem
+Prompts were too loose. Ideator had no anti-examples, no concrete pain points, vague "AI-native" definition. Gatekeeper had no scoring anchors. Recombiner got raw JSON dumps with no combination guidance. Result: LLMs defaulted to safe, generic outputs regardless of model choice.
+
+### Changes Made
+
+1. [x] **Ideator system prompt** (`src/prompts/ideator_system.md`) -- Added 2 anti-examples (AI Meeting Summarizer, Smart To-Do List) with failure explanations, 1 good example (CommitGraph), sharpened "AI magic moment" definition (3-part test: accumulated context + not ChatGPT-replicable + improves with use), added structured hook loop requirements (trigger, action, reward, investment)
+2. [x] **Ideator user prompt** (`src/prompts/ideator_user.md`) -- Replaced generic segment labels with pain-point framing per segment (specific frustrations/workflow gaps), added competitive landscape (Notion, Linear, Obsidian, Granola, etc.), added explicit anti-pattern instruction (no summarizers, chatbots, generic writing assistants, or "user types -> LLM responds" loops)
+3. [x] **Gatekeeper system prompt** (`src/prompts/gatekeeper_system.md`) -- Added 3-tier calibration anchors for Q1/Q2/Q3 scoring (concrete score examples at low/mid/high), added heuristic: "if replicable with ChatGPT custom instruction + spreadsheet, score Q1 >= 7"
+4. [x] **Recombiner system prompt** (`src/prompts/recombiner_system.md`) -- Required compounding_advantage field to answer 3 questions: what data accumulates, how it improves the product, why a competitor can't replicate in < 6 months. Added: "if you cannot answer all three, do not include the hybrid"
+5. [x] **Recombiner user prompt** (`src/prompts/recombiner_user.md`) -- Added combination strategy directive: look for ideas serving same user at different workflow moments, shared data layer, avoid cross-segment Frankensteins
+6. [x] **Verify** -- config-check passes (all 16 templates found, API OK), 25 unit tests passed, 2 skipped
+
+### Additional fix
+- `src/main.py` line 212: Fixed config-check connectivity test model reference from old `qwen-14b` to `glm-4.7-flash` (broken since model swap).
+
+### Scope
+- 5 prompt .md files changed. 1 Python file changed (1-line fix in main.py). No schema changes, no config changes.
+- Output format instructions in each prompt remain identical so structured parsing continues to work.
+
+### Full plan file: `~/.claude/plans/happy-swinging-cerf.md`
 
 ---
 

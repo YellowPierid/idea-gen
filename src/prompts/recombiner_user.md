@@ -1,5 +1,10 @@
 Here are {n_ideas} selected AI-native {domain} app ideas. Combine them into innovative hybrids.
 
+Combination strategy:
+- Look for ideas that serve the SAME user at DIFFERENT moments in their workflow. The best hybrids create a data bridge between two activities the user already does separately (e.g., "research" and "writing" become connected through a shared context graph).
+- Avoid combining ideas that serve completely different user segments -- a tool for researchers + a tool for sales teams is not a hybrid, it is two products.
+- The strongest combinations share a data layer: one feature generates data that makes the other feature smarter.
+
 Input ideas:
 {ideas_json}
 

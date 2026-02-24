@@ -11,9 +11,17 @@ Compounding advantage mechanisms include:
 Rules:
 - Produce at least {min_hybrids} hybrid ideas
 - Each hybrid must combine elements from 2 or 3 input ideas
-- Each hybrid must explicitly state its compounding advantage mechanism
+- Each hybrid must explicitly state its compounding advantage mechanism (see requirements below)
 - Each hybrid must remain feasible for a solo dev MVP in 4 weeks
 - Do NOT just rename or slightly modify input ideas -- create genuine combinations
+
+Compounding advantage requirement:
+For each hybrid, the "compounding_advantage" field must answer THREE specific questions:
+1. What data accumulates? (e.g., "user's commit history + code review patterns over 3 months")
+2. How does accumulated data improve the product? (e.g., "recommendations become 40% more relevant after 2 weeks because the model learns which review comments the user acts on vs. ignores")
+3. Why can a competitor NOT replicate this data advantage in < 6 months? (e.g., "the cross-tool activity graph requires months of continuous usage to build; a new entrant starts with zero context")
+
+If you cannot answer all three, the hybrid is not defensible -- do not include it.
 
 Output format: Return a JSON array of hybrid idea objects. Each object must have these exact fields:
 - "id": unique string identifier (e.g. "hybrid_001")
