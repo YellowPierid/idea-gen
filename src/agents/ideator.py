@@ -10,26 +10,28 @@ from src.llm import create_client, call_llm_structured_list
 from src.logging_utils import RunLogger
 from src.prompt_utils import format_user_context
 from src.storage import load_global_history, save_global_history
+from src.reme_memory import search_patterns as reme_search_patterns
 
 logger = logging.getLogger("idea_gen")
 
-# Default user segments for Android productivity domain (3 calls)
+# Default user segments for personal analytics PC domain (3 calls)
 DEFAULT_SEGMENTS = [
-    "Indie developers / side-project builders on mobile",
-    "Students and self-learners",
-    "Field workers / blue-collar professionals",
+    "Content consumers with saved/liked media archives (YouTube Watch Later, Twitter/X likes, Reddit saves)",
+    "Knowledge workers drowning in scattered notes and documents",
+    "Personal finance trackers with bank exports, receipts, and spending data",
 ]
 
 # Retry segments (used if all ideas killed by gatekeeper)
 RETRY_SEGMENTS = [
-    "Freelancers managing client work on the go",
-    "Hobbyists and makers tracking personal projects",
-    "Remote workers needing offline-first productivity tools",
+    "Social media users who want analytics on their own posting and engagement history",
+    "Hobbyists with local PDF/ebook libraries and browser bookmark dumps",
+    "Professionals with project logs, work journals, or CRM exports they cannot query",
 ]
 
 DOMAIN_DESCRIPTIONS = {
     "productivity": "planning, writing, decision-making, meeting workflows, project execution, personal organization, learning-for-work",
     "productivity_android": "offline-first Android apps for on-the-go capture, short-session productivity, and AI-enriched workflows that sync when connected",
+    "personal_analytics_pc": "plain-English data assistants for non-technical users -- users bring their own data export, Claude reads and indexes it, users ask questions in natural language and get plain English answers; built as Python + Streamlit desktop apps",
     "health": "wellness tracking, health management, fitness planning, mental health support",
     "education": "learning platforms, skill development, tutoring, educational content",
     "finance": "personal finance, budgeting, investment, financial planning",
@@ -62,6 +64,32 @@ def _load_past_themes() -> str:
                 "Focus on unexplored niches.\n"
             )
     return ""
+
+
+def _load_reme_patterns(config) -> str:
+    """Tier 3 (procedural memory): retrieve past winning patterns from ReMeLight.
+
+    Returns a formatted prompt suffix, or empty string if no memories yet or on error.
+    """
+    reme_cfg = getattr(config, "reme_light", None)
+    if not reme_cfg:
+        return ""
+    working_dir = getattr(reme_cfg, "working_dir", None)
+    model = getattr(reme_cfg, "model", "")
+    if not working_dir:
+        return ""
+    patterns = reme_search_patterns(
+        query="successful ideas that passed gatekeeper, high-scoring domains and idea patterns",
+        working_dir=working_dir,
+        model=model,
+    )
+    if not patterns:
+        return ""
+    return (
+        "\n\nPAST WINNING PATTERNS (learned from previous pipeline runs):\n"
+        f"{patterns}\n"
+        "Use these patterns to guide idea generation toward approaches that have proven successful.\n"
+    )
 
 
 def _filter_duplicates(
@@ -205,6 +233,9 @@ def run_ideator(state: PipelineState, run_logger: RunLogger) -> PipelineState:
     # Tier 2 (soft memory): inject past themes into system prompt
     past_themes = _load_past_themes()
 
+    # Tier 3 (procedural memory): retrieve past winning patterns from ReMeLight
+    reme_patterns = _load_reme_patterns(config)
+
     # Android profile context (appended to system prompt after format)
     android_profile = state.get("android_profile", "")
 
@@ -229,10 +260,12 @@ def run_ideator(state: PipelineState, run_logger: RunLogger) -> PipelineState:
         )
         if android_profile:
             system_prompt += (
-                f"\n\n## Target Android Profile\n"
-                f"Device profile for this run: {android_profile}\n"
-                f"Generate ideas that work within these hardware and connectivity constraints."
+                f"\n\n## Target Platform Profile\n"
+                f"Platform context for this run: {android_profile}\n"
+                f"Generate ideas that are natural fits for this platform and deployment context."
             )
+        # Tier 3: append ReMeLight patterns (empty string when no memories yet)
+        system_prompt += reme_patterns
 
         ideas = _generate_batch(
             client, model_slug, temperature, system_prompt, user_template,
@@ -282,10 +315,12 @@ def run_ideator(state: PipelineState, run_logger: RunLogger) -> PipelineState:
         )
         if android_profile:
             system_prompt += (
-                f"\n\n## Target Android Profile\n"
-                f"Device profile for this run: {android_profile}\n"
-                f"Generate ideas that work within these hardware and connectivity constraints."
+                f"\n\n## Target Platform Profile\n"
+                f"Platform context for this run: {android_profile}\n"
+                f"Generate ideas that are natural fits for this platform and deployment context."
             )
+        # Tier 3: append ReMeLight patterns (empty string when no memories yet)
+        system_prompt += reme_patterns
 
         ideas = _generate_batch(
             client, model_slug, temperature, system_prompt, user_template,

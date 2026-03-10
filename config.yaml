@@ -53,8 +53,8 @@ gatekeeper:
 
 # Pipeline defaults
 pipeline:
-  domain: "productivity_android"
-  android_profile: "mid-range Android, 4GB RAM, sometimes offline, limited background permissions"
+  domain: "personal_analytics_pc"
+  android_profile: "Python + Streamlit desktop app, Claude API for NLP, user-supplied local data exports (CSV/JSON/text), runs on Windows/Mac/Linux PC"
   n_raw: 30
   top_k: 10
   min_hybrids: 5
@@ -63,9 +63,9 @@ pipeline:
 
 # User profile (optional -- pipeline works without it)
 user_profile:
-  skills: ["Android development", "Kotlin", "Python", "LangGraph", "mobile UX"]
-  stack: ["Python", "LangGraph", "OpenRouter", "Pydantic", "Kotlin", "Android SDK"]
-  past_projects: ["Android apps", "mobile productivity tools", "LLM agent pipelines"]
+  skills: ["Python", "Streamlit", "Claude API", "data parsing", "desktop app UX"]
+  stack: ["Python", "Streamlit", "Claude API", "Pandas", "LangGraph", "OpenRouter"]
+  past_projects: ["personal data tools", "LLM agent pipelines", "Python desktop apps"]
 
 # Market search for pre-ranker monetization scoring
 search:
@@ -78,6 +78,11 @@ search:
 memory:
   similarity_threshold: 0.90
   history_dir: "./outputs/global_history"
+
+# ReMeLight (Tier 3 procedural memory -- learns from pipeline outcomes)
+reme_light:
+  working_dir: "./outputs/global_history/reme_light"
+  model: "deepseek/deepseek-v3.2"
 
 # Output
 output:

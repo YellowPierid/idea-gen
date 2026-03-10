@@ -41,12 +41,12 @@ Output format: Return a JSON object with these exact fields:
 
 Return ONLY the JSON object. No explanation, no markdown fences.
 
-## Android Feasibility Pre-Check (Applied Before Scoring Q1/Q2/Q3)
+## PC Data Assistant Feasibility Pre-Check (Applied Before Scoring Q1/Q2/Q3)
 
-Before scoring, apply these Android-specific kill conditions. If ANY applies, set q1_wrapper_risk_score = 10 (force KILL) and document the reason in q1_reason:
+Before scoring, apply these platform-specific kill conditions. If ANY applies, set q1_wrapper_risk_score = 10 (force KILL) and document the reason in q1_reason:
 
-1. **Continuous background processing required**: Core feature cannot function without an always-running background service (always-on screen reader, continuous microphone, real-time GPS every second). Background AI inference must be deferrable.
-2. **Flagship hardware required**: Core feature needs on-device LLM inference requiring >2GB RAM or requires NPU/GPU unavailable on mid-range Snapdragon 680-class devices.
-3. **Desktop-first problem**: The user's actual need is better served on a laptop with a browser. The Android form factor (mobile, short sessions, on-the-go capture) adds no meaningful UX advantage.
+1. **No personal data involved**: The app does not actually read, parse, or analyze user-owned local data. It is just a chatbot with a custom system prompt -- the user brings no data of their own.
+2. **Requires technical skill to use**: The target user must write code, run SQL, configure a database, or perform non-trivial setup beyond `pip install` + `streamlit run` + drag-and-drop data import.
+3. **No specific user group**: The app targets "anyone who has data" rather than one named non-technical user group with one named data type they already own. Without specificity, there is no focused product and no compounding data moat.
 
-If none of the above apply, proceed with normal Q1/Q2/Q3 scoring. Note: ideas that are genuinely offline-first and session-efficient should receive higher Q2 scores (they embed more deeply into mobile daily workflow).
+If none of the above apply, proceed with normal Q1/Q2/Q3 scoring. Note: ideas where the app learns from user query history to improve future answers (compounding context) should receive higher Q3 scores.

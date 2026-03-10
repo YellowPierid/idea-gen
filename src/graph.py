@@ -23,6 +23,7 @@ from src.agents.pre_ranker import run_pre_ranker
 from src.agents.dsr_designer import run_dsr_designer
 from src.agents.ranker import run_ranker
 from src.agents.user_review import run_user_review
+from src.reme_memory import schedule_summary as reme_schedule_summary
 
 logger = logging.getLogger("idea_gen")
 
@@ -262,6 +263,49 @@ def _update_past_themes(state: PipelineState, run_logger: RunLogger) -> Pipeline
     return state
 
 
+def _summarize_pipeline_memory(state: PipelineState, run_logger: RunLogger) -> PipelineState:
+    """Tier 3 memory: persist pipeline outcome to ReMeLight after each run.
+
+    Builds a structured summary of what passed/failed the gatekeeper and what
+    ranked highest, then schedules an async ReMeLight summarization task.
+    The summary is stored in outputs/global_history/reme_light/MEMORY.md
+    and used by the Ideator in future runs.
+    """
+    config = state["config"]
+    reme_cfg = getattr(config, "reme_light", None)
+    if not reme_cfg or not getattr(reme_cfg, "working_dir", None):
+        return state
+
+    gate_results = state.get("gate_results", [])
+    final_ranking = state.get("final_ranking", [])
+
+    passed = [g for g in gate_results if getattr(g, "status", "") == "pass"]
+    killed = [g for g in gate_results if getattr(g, "status", "") == "kill"]
+
+    lines = ["Pipeline run outcome summary:"]
+    if passed:
+        names = ", ".join(getattr(g, "idea_name", str(g)) for g in passed)
+        lines.append(f"Passed gatekeeper ({len(passed)}): {names}")
+    if killed:
+        kills = "; ".join(
+            f"{getattr(g, 'idea_name', str(g))} ({getattr(g, 'kill_reason', 'unknown')})"
+            for g in killed
+        )
+        lines.append(f"Killed by gatekeeper ({len(killed)}): {kills}")
+    if final_ranking:
+        top = final_ranking[0]
+        lines.append(
+            f"Top-ranked idea: {getattr(top, 'idea_name', '')} "
+            f"(score={getattr(top, 'total_score', '')}) -- {getattr(top, 'rationale', '')}"
+        )
+
+    outcome_text = "\n".join(lines)
+    messages = [{"role": "assistant", "content": outcome_text}]
+    reme_schedule_summary(messages, reme_cfg.working_dir, getattr(reme_cfg, "model", ""))
+    run_logger.log_event("reme_summary_scheduled", {"outcome_length": len(outcome_text)})
+    return state
+
+
 def _should_retry(state: PipelineState) -> str:
     """Conditional edge after gatekeeper: retry ideator or continue."""
     survivors = state.get("survivors", [])
@@ -307,6 +351,10 @@ def build_graph(store: OutputStore, run_logger: RunLogger) -> StateGraph:
         "update_themes",
         lambda state: _update_past_themes(state, run_logger),
     )
+    graph.add_node(
+        "summarize_pipeline_memory",
+        lambda state: _summarize_pipeline_memory(state, run_logger),
+    )
 
     # Linear flow with conditional retry after gatekeeper
     graph.set_entry_point("ideator")
@@ -329,6 +377,7 @@ def build_graph(store: OutputStore, run_logger: RunLogger) -> StateGraph:
     graph.add_edge("pre_ranker", "dsr_designer")
     graph.add_edge("dsr_designer", "ranker")
     graph.add_edge("ranker", "update_themes")
-    graph.add_edge("update_themes", END)
+    graph.add_edge("update_themes", "summarize_pipeline_memory")
+    graph.add_edge("summarize_pipeline_memory", END)
 
     return graph

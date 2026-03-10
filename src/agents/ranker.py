@@ -8,6 +8,7 @@ from src.config import get_agent_config, resolve_model
 from src.llm import create_client, call_llm_structured
 from src.scoring import compute_final_score
 from src.logging_utils import RunLogger
+from src.reme_memory import compress_messages as reme_compress
 
 logger = logging.getLogger("idea_gen")
 PROMPTS_DIR = Path(__file__).resolve().parent.parent / "prompts"
@@ -89,6 +90,17 @@ def run_ranker(state: PipelineState, run_logger: RunLogger) -> PipelineState:
         ideas_with_scores=json.dumps(ideas_summary, indent=2),
         n_survivors=len(scored_ideas),
     )
+
+    # Tier 3: compress messages via ReMeLight if configured (graceful fallback)
+    reme_cfg = getattr(config, "reme_light", None)
+    if reme_cfg and getattr(reme_cfg, "working_dir", None):
+        messages = [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt},
+        ]
+        compressed = reme_compress(messages, reme_cfg.working_dir, getattr(reme_cfg, "model", ""))
+        system_prompt = next((m["content"] for m in compressed if m["role"] == "system"), system_prompt)
+        user_prompt = next((m["content"] for m in compressed if m["role"] == "user"), user_prompt)
 
     llm_response = call_llm_structured(
         client=client, model=model_slug, temperature=temperature,

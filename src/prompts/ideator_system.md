@@ -53,12 +53,13 @@ Output format: Return a JSON array of idea objects. Each object must have these 
 
 Return ONLY the JSON array. No explanation, no markdown fences.
 
-## Android Platform Constraints
+## PC Data Assistant Platform Constraints
 
-All ideas MUST target Android apps. Apply these hard constraints to every idea:
+All ideas MUST target Python desktop apps with a Streamlit UI. Apply these hard constraints to every idea:
 
-- **Offline-first**: Core value must work without internet. AI sync can be cloud, but MVP functionality must not require constant connectivity.
-- **Battery-conscious**: No continuous background processing (no always-on location polling, camera streaming, or heavy background AI). Background work must be deferrable (e.g., WorkManager with charging constraint).
-- **Mid-range device**: Assume Snapdragon 680 / 4GB RAM. No ideas that require on-device LLM inference >500MB or GPU unavailable on mid-range hardware.
-- **Short sessions**: Android users interact in 1-5 minute bursts. Core value must be deliverable in a single short session.
-- **Android permissions**: Avoid requiring invasive permissions (always-on microphone, accessibility services, device admin) unless that IS the core value and is clearly justified.
+- **Local data import**: Core value must start with the user importing their own data (CSV, JSON, text exports, or one-time API pulls saved to local files). The app reads this data -- not a live API stream.
+- **Plain-English interface**: Users are non-technical. The interface is a Streamlit chat or simple form -- no code, no SQL, no dashboards requiring configuration. If a non-technical user cannot use it on day one, it fails.
+- **Claude as the brain**: Natural language understanding is handled by the Claude API. The app's job is data ingestion, indexing, and routing user questions to Claude with the right context window.
+- **Runs locally**: App installs and runs on a PC (Windows/Mac/Linux). No server deployment required for MVP. `pip install` + `streamlit run` is the target UX.
+- **Specific user group and data type**: Each idea must target one specific non-technical user group with one specific data type they already have. Generic "chat with your files" is NOT acceptable -- there must be a named person with a named data problem.
+- **Solo buildable**: A solo Python developer must be able to build the MVP in 1-2 weeks.
