@@ -6,7 +6,7 @@
 
 [identity]
 role = "solo technical builder / researcher"
-background = ["medical (radiology)", "applied AI", "education tools", "quant trading research"]
+background = ["applied AI", "education tools", "quant trading research"]
 work_style = ["project-driven", "iterative MVP", "agent-based systems"]
 
 [core_programming_skills]

@@ -53,7 +53,7 @@ def _parse_paper(raw: dict[str, Any]) -> EvidencePaper | None:
         abstract=abstract[:400],  # truncate to 400 chars for prompt budget
         year=raw.get("year"),
         citation_count=raw.get("citationCount"),
-        fields=[f.get("category", "") for f in (raw.get("fieldsOfStudy") or [])],
+        fields=[f if isinstance(f, str) else f.get("category", "") for f in (raw.get("fieldsOfStudy") or [])],
     )
 
 
