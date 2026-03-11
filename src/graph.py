@@ -23,6 +23,7 @@ from src.agents.pre_ranker import run_pre_ranker
 from src.agents.dsr_designer import run_dsr_designer
 from src.agents.ranker import run_ranker
 from src.agents.user_review import run_user_review
+from src.agents.paper_fetcher import run_paper_fetcher
 from src.reme_memory import schedule_summary as reme_schedule_summary
 
 logger = logging.getLogger("idea_gen")
@@ -337,6 +338,7 @@ def build_graph(store: OutputStore, run_logger: RunLogger) -> StateGraph:
     graph = StateGraph(PipelineState)
 
     # Register nodes
+    graph.add_node("paper_fetcher", _wrap_node(run_paper_fetcher, "paper_fetcher", store, run_logger))
     graph.add_node("ideator", _wrap_node(run_ideator, "ideator", store, run_logger))
     graph.add_node("selector", _wrap_node(run_selector, "selector", store, run_logger))
     graph.add_node("user_review", _wrap_node(run_user_review, "user_review", store, run_logger))
@@ -357,7 +359,8 @@ def build_graph(store: OutputStore, run_logger: RunLogger) -> StateGraph:
     )
 
     # Linear flow with conditional retry after gatekeeper
-    graph.set_entry_point("ideator")
+    graph.set_entry_point("paper_fetcher")
+    graph.add_edge("paper_fetcher", "ideator")
     graph.add_edge("ideator", "selector")
     graph.add_edge("selector", "user_review")
     graph.add_edge("user_review", "recombiner")
