@@ -32,3 +32,5 @@ nul
 
 # Claude
 .claude/
+
+data/papers/*.pdf
