@@ -14,18 +14,18 @@ from src.reme_memory import search_patterns as reme_search_patterns
 
 logger = logging.getLogger("idea_gen")
 
-# Default user segments for personal analytics PC domain (3 calls)
+# Default user segments for biology olympiad domain (3 calls)
 DEFAULT_SEGMENTS = [
-    "Content consumers with saved/liked media archives (YouTube Watch Later, Twitter/X likes, Reddit saves)",
-    "Knowledge workers drowning in scattered notes and documents",
-    "Personal finance trackers with bank exports, receipts, and spending data",
+    "High-school students (ages 15-18) preparing for national biology olympiad selection rounds",
+    "Undergraduate students (ages 18-22) competing in IBO or national university-level biology competitions",
+    "Self-directed learners with no olympiad coach who need structured feedback on olympiad-depth material",
 ]
 
 # Retry segments (used if all ideas killed by gatekeeper)
 RETRY_SEGMENTS = [
-    "Social media users who want analytics on their own posting and engagement history",
-    "Hobbyists with local PDF/ebook libraries and browser bookmark dumps",
-    "Professionals with project logs, work journals, or CRM exports they cannot query",
+    "Students who passed the first round and need to close specific knowledge gaps under time pressure",
+    "Students who struggle with lab practical skills and experimental design questions",
+    "Students transitioning from school biology to olympiad depth (enzyme kinetics, phylogenetics, Hardy-Weinberg)",
 ]
 
 DOMAIN_DESCRIPTIONS = {
@@ -35,6 +35,7 @@ DOMAIN_DESCRIPTIONS = {
     "health": "wellness tracking, health management, fitness planning, mental health support",
     "education": "learning platforms, skill development, tutoring, educational content",
     "finance": "personal finance, budgeting, investment, financial planning",
+    "biology_olympiad": "evidence-grounded web apps for high-school and undergraduate students preparing for biology olympiad competitions (IBO, national olympiads, AP Biology); ideas must use known learning science mechanics and address olympiad-level material beyond standard school biology",
 }
 
 PROMPTS_DIR = Path(__file__).resolve().parent.parent / "prompts"
@@ -45,6 +46,35 @@ def _load_prompt(filename: str) -> str:
     """Load a prompt template from the prompts directory."""
     path = PROMPTS_DIR / filename
     return path.read_text(encoding="utf-8")
+
+
+def _format_evidence_context(papers: list) -> str:
+    """Format fetched papers as a prompt-injectable evidence context block."""
+    if not papers:
+        return ""
+    lines = ["## Validated Learning Science (cite these in your ideas)\n"]
+    for i, p in enumerate(papers[:8], 1):  # max 8 papers in prompt
+        year_str = f" ({p.year})" if p.year else ""
+        lines.append(f"{i}. **{p.title}**{year_str}")
+        lines.append(f"   {p.abstract}\n")
+    return "\n".join(lines)
+
+
+_OLYMPIAD_PERSONA = """\
+## Active Persona: Former Olympiad Student / Study Methods Researcher
+Generate ideas through the lens of someone who:
+- Trained for biology olympiad themselves and knows the specific knowledge gaps
+- Is obsessed with evidence-based study techniques (not just "study harder")
+- Understands that olympiad prep differs from school exams in depth and question style
+- Wants tools that reduce rote memorization and increase mechanistic understanding
+Generate ideas this person would build for their past self.\
+"""
+
+
+def _maybe_inject_persona(system_prompt: str, rotate: bool) -> str:
+    if not rotate:
+        return system_prompt
+    return _OLYMPIAD_PERSONA + "\n\n" + system_prompt
 
 
 def _idea_to_text(idea: IdeaCandidate) -> str:
@@ -266,6 +296,13 @@ def run_ideator(state: PipelineState, run_logger: RunLogger) -> PipelineState:
             )
         # Tier 3: append ReMeLight patterns (empty string when no memories yet)
         system_prompt += reme_patterns
+        # Inject evidence papers + persona rotation
+        evidence_papers = state.get("evidence_papers", [])
+        rotate_persona = state.get("rotate_persona", False)
+        evidence_block = _format_evidence_context(evidence_papers)
+        if evidence_block:
+            system_prompt = system_prompt + "\n\n" + evidence_block
+        system_prompt = _maybe_inject_persona(system_prompt, rotate_persona)
 
         ideas = _generate_batch(
             client, model_slug, temperature, system_prompt, user_template,
@@ -294,6 +331,8 @@ def run_ideator(state: PipelineState, run_logger: RunLogger) -> PipelineState:
         all_ideas.extend(unique)
         run_logger.info(f"Ideator: got {len(unique)} unique ideas for '{segment}'")
 
+    state["rotate_persona"] = False  # reset after first use
+
     # Phase 2: backfill if novelty filter removed too many ideas
     deficit = n_raw - len(all_ideas)
     backfill_round = 0
@@ -321,6 +360,13 @@ def run_ideator(state: PipelineState, run_logger: RunLogger) -> PipelineState:
             )
         # Tier 3: append ReMeLight patterns (empty string when no memories yet)
         system_prompt += reme_patterns
+        # Inject evidence papers + persona rotation
+        evidence_papers = state.get("evidence_papers", [])
+        rotate_persona = state.get("rotate_persona", False)
+        evidence_block = _format_evidence_context(evidence_papers)
+        if evidence_block:
+            system_prompt = system_prompt + "\n\n" + evidence_block
+        system_prompt = _maybe_inject_persona(system_prompt, rotate_persona)
 
         ideas = _generate_batch(
             client, model_slug, temperature, system_prompt, user_template,
