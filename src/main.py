@@ -39,6 +39,37 @@ def cli():
     pass
 
 
+def _print_survival_funnel(state: dict) -> None:
+    """Print a per-run idea survival funnel table to stdout."""
+    n_raw = len(state.get("raw_ideas", []))
+    n_selected = len(state.get("selected_ideas", []))
+    gate_results = state.get("gate_results", [])
+    n_survived_gate = sum(1 for g in gate_results if g.status == "PASS")
+    n_killed_gate = sum(1 for g in gate_results if g.status == "KILL")
+
+    kill_categories: dict[str, int] = {}
+    for g in gate_results:
+        if g.status == "KILL" and g.kill_reason:
+            reason = g.kill_reason.split("--")[0].strip()[:40]
+            kill_categories[reason] = kill_categories.get(reason, 0) + 1
+
+    n_dsr = len(state.get("dsr_protocols", []))
+    n_final = len(state.get("final_ranking", []))
+    n_pre_ranker = len(state.get("pre_ranker_scores", []))
+
+    print("\n[INFO] --- Idea Survival Funnel ---")
+    print(f"  Raw ideas generated  : {n_raw}")
+    print(f"  After selector       : {n_selected}")
+    kill_detail = ""
+    if kill_categories:
+        kill_detail = "  (" + ", ".join(f"{v} {k}" for k, v in kill_categories.items()) + ")"
+    print(f"  After gatekeeper     : {n_survived_gate}  ({n_killed_gate} killed){kill_detail}")
+    print(f"  Pre-ranker evaluated : {n_pre_ranker}")
+    print(f"  DSR protocols written: {n_dsr}")
+    print(f"  Final ranked         : {n_final}")
+    print()
+
+
 @cli.command()
 @click.option("--n_raw", type=int, default=None, help="Number of raw ideas to generate")
 @click.option("--top_k", type=int, default=None, help="Number of ideas to select")
@@ -121,6 +152,7 @@ def run(n_raw, top_k, seed, domain, resume, no_pause, config_path, android_profi
     logger.info("--- Pipeline starting ---")
     try:
         final_state = compiled.invoke(initial_state)
+        _print_survival_funnel(final_state)
     except Exception as e:
         logger.error("Pipeline failed: %s", e)
         run_logger.log_event("pipeline", "error", {"error": str(e)})
