@@ -37,6 +37,35 @@ def apply_gate_thresholds(
     return "PASS", None
 
 
+# Ed-tech kill patterns for solo web dev / biology olympiad domain
+EDTECH_KILL_PATTERNS: dict[str, list[str]] = {
+    "requires_hardware": [
+        "EEG headset", "biosensor", "eye tracker", "smart pen",
+        "physical sensor", "wearable device", "lab equipment integration",
+    ],
+    "requires_institution": [
+        "school LMS integration", "requires school data", "teacher must set up",
+        "institutional login", "district license", "school server",
+        "admin approval required",
+    ],
+    "requires_large_dataset": [
+        "requires 10,000 students", "needs training data from schools",
+        "requires labeled exam responses", "must partner with olympiad committee",
+        "needs historical olympiad data",
+    ],
+}
+
+
+def edtech_feasibility_prescreen(idea_text: str) -> str | None:
+    """Return a kill reason string if idea matches any ed-tech kill pattern, else None."""
+    text_lower = idea_text.lower()
+    for category, patterns in EDTECH_KILL_PATTERNS.items():
+        for pattern in patterns:
+            if pattern.lower() in text_lower:
+                return f"edtech_kill:{category} -- matched pattern: '{pattern}'"
+    return None
+
+
 def normalize_scores(
     principle_score: int,
     feasibility: int,

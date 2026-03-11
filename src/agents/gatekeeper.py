@@ -4,7 +4,7 @@ from pydantic import BaseModel, ConfigDict
 from src.schemas import PipelineState, IdeaCandidate, GateResult, AngelRescueResult
 from src.config import get_agent_config, resolve_model
 from src.llm import create_client, call_llm_structured
-from src.scoring import apply_gate_thresholds
+from src.scoring import apply_gate_thresholds, edtech_feasibility_prescreen
 from src.logging_utils import RunLogger
 
 logger = logging.getLogger("idea_gen")
@@ -136,6 +136,23 @@ def run_gatekeeper(state: PipelineState, run_logger: RunLogger) -> PipelineState
     rescue_count = 0
 
     for idea in candidates:
+        # Deterministic ed-tech prescreen -- skip LLM call if idea is a clear kill
+        idea_text = f"{idea.hook_loop} {idea.mvp_scope} {idea.ai_essential_claim}"
+        prescreen_kill = edtech_feasibility_prescreen(idea_text)
+        if prescreen_kill:
+            gate_result = GateResult(
+                idea_id=idea.id,
+                q1_wrapper_risk_score=0, q1_reason="prescreen",
+                q2_embedding_score=0, q2_workflow_embedding="prescreen",
+                q3_compounding_score=0, q3_hard_to_copy_reason="prescreen",
+                status="KILL",
+                kill_reason=prescreen_kill,
+            )
+            gate_results.append(gate_result)
+            run_logger.kill("gatekeeper", idea.id, prescreen_kill)
+            kill_count += 1
+            continue  # skip LLM call entirely
+
         user_prompt = user_template.format(
             idea_name=idea.name,
             hook_loop=idea.hook_loop,
