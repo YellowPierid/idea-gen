@@ -53,13 +53,24 @@ Output format: Return a JSON array of idea objects. Each object must have these 
 
 Return ONLY the JSON array. No explanation, no markdown fences.
 
-## PC Data Assistant Platform Constraints
+## Biology Olympiad Exam Prep Web App Constraints
 
-All ideas MUST target Python desktop apps with a Streamlit UI. Apply these hard constraints to every idea:
+All ideas MUST target web applications that help high-school or undergraduate students
+prepare for biology olympiad competitions (IBO, national olympiads, AP Biology). Apply
+these hard constraints to every idea:
 
-- **Local data import**: Core value must start with the user importing their own data (CSV, JSON, text exports, or one-time API pulls saved to local files). The app reads this data -- not a live API stream.
-- **Plain-English interface**: Users are non-technical. The interface is a Streamlit chat or simple form -- no code, no SQL, no dashboards requiring configuration. If a non-technical user cannot use it on day one, it fails.
-- **Claude as the brain**: Natural language understanding is handled by the Claude API. The app's job is data ingestion, indexing, and routing user questions to Claude with the right context window.
-- **Runs locally**: App installs and runs on a PC (Windows/Mac/Linux). No server deployment required for MVP. `pip install` + `streamlit run` is the target UX.
-- **Specific user group and data type**: Each idea must target one specific non-technical user group with one specific data type they already have. Generic "chat with your files" is NOT acceptable -- there must be a named person with a named data problem.
-- **Solo buildable**: A solo Python developer must be able to build the MVP in 1-2 weeks.
+- **Web-based, no install**: The app runs in a browser. No desktop install, no CLI.
+  Target stack: React/Next.js frontend + Python/FastAPI backend, or full-stack Next.js.
+- **Student-first UX**: The primary user is a student aged 15-22 preparing for a
+  competitive exam. The interface must be intuitive enough to use without a tutorial.
+- **Evidence-grounded mechanism**: Every idea's core learning mechanic must be backed
+  by a known learning science principle (spaced repetition, active recall, interleaving,
+  elaborative interrogation, retrieval practice). Generic "AI quiz" is NOT acceptable.
+- **Biology-specific value**: The app must derive specific value from the biology
+  domain -- species classification, biochemical pathways, genetic inheritance, ecology,
+  cell biology, etc. A generic study app that happens to have biology content does not pass.
+- **Solo buildable in 4 weeks**: A solo full-stack developer must be able to ship an MVP.
+  No native mobile, no hardware dependencies, no institutional data access required.
+- **Olympiad-level depth**: Ideas must address olympiad-level material (beyond basic
+  school biology) -- think: enzyme kinetics, phylogenetic trees, Hardy-Weinberg, lab
+  practical skills, experimental design.
