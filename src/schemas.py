@@ -246,6 +246,18 @@ class FinalRanking(BaseModel):
         return _validate_0_2(v, info.field_name)
 
 
+
+class EvidencePaper(BaseModel):
+    """A research paper fetched to ground idea generation."""
+    model_config = ConfigDict(strict=False)
+
+    title: str
+    abstract: str
+    year: Optional[int] = None
+    citation_count: Optional[int] = None
+    fields: List[str] = []
+
+
 # ---------------------------------------------------------------------------
 # 7. PipelineConfig and sub-configs
 # ---------------------------------------------------------------------------
@@ -297,9 +309,10 @@ class SearchConfig(BaseModel):
     model_config = ConfigDict(strict=False)
 
     enabled: bool = False
-    provider: str = "duckduckgo"
-    max_results: int = 3
-    timeout_seconds: int = 10
+    provider: str = "semantic_scholar"
+    max_results_per_query: int = 5
+    n_queries: int = 4
+    timeout_seconds: int = 15
 
 
 class MemoryConfig(BaseModel):
@@ -357,3 +370,5 @@ class PipelineState(TypedDict):
     retry_count: int
     starred_ids: List[str]
     interactive: bool
+    evidence_papers: List[EvidencePaper]   # papers fetched by paper_fetcher
+    rotate_persona: bool                    # True = low diversity detected, rotate ideator persona
