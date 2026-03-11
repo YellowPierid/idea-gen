@@ -101,6 +101,8 @@ def run(n_raw, top_k, seed, domain, resume, no_pause, config_path, android_profi
         "retry_count": 0,
         "starred_ids": [],
         "interactive": not no_pause,
+        "evidence_papers": [],
+        "rotate_persona": False,
     }
 
     if resume:

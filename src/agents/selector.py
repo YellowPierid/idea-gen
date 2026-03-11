@@ -1,6 +1,7 @@
 import logging
 import numpy as np
 from sklearn.cluster import KMeans
+from sklearn.metrics.pairwise import cosine_similarity as sk_cosine_sim
 from src.schemas import PipelineState, IdeaCandidate
 from src.embeddings import get_embeddings
 from src.llm import create_client
@@ -63,6 +64,19 @@ def run_selector(state: PipelineState, run_logger: RunLogger) -> PipelineState:
         selected_indices.append(best_in_cluster)
 
     selected = [raw_ideas[i] for i in selected_indices]
+
+    selected_embeddings = embeddings[selected_indices]
+    if len(selected_embeddings) > 1:
+        sim_matrix = sk_cosine_sim(selected_embeddings)
+        np.fill_diagonal(sim_matrix, 0)
+        n = len(selected_embeddings)
+        mean_sim = float(sim_matrix.sum() / (n * (n - 1)))
+    else:
+        mean_sim = 0.0
+
+    diversity_threshold = 0.82
+    state["rotate_persona"] = mean_sim > diversity_threshold
+    run_logger.info(f"Selector: mean cosine similarity={mean_sim:.3f}, rotate_persona={state['rotate_persona']}")
 
     run_logger.info(f"Selector: selected {len(selected)} diverse ideas from {len(raw_ideas)}")
     run_logger.node_end("selector", n_selected=len(selected))
